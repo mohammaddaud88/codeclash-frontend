@@ -1,10 +1,40 @@
 import { useState, useEffect } from "react";
 import Navbar2 from "./Navbar2"
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
+// Material UI imports
+import {
+    Container,
+    Grid,
+    Paper,
+    Typography,
+    Box,
+    Avatar,
+    Button,
+    Divider,
+    Card,
+    CardContent,
+    TextField,
+    MenuItem,
+    Select,
+    InputLabel,
+    FormControl,
+    Link,
+    CircularProgress
+} from '@mui/material';
+
+// Icons
+import CodeIcon from '@mui/icons-material/Code';
+import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
+import SchoolIcon from '@mui/icons-material/School';
+import GitHubIcon from '@mui/icons-material/GitHub';
+import LinkedInIcon from '@mui/icons-material/LinkedIn';
 
 const Profile = () => {
-
     const token = sessionStorage.getItem('Authtoken');
+    const [loading, setLoading] = useState(true);
+    const [saveLoading, setSaveLoading] = useState(false);
 
     const [profile, setProfile] = useState({
         name: "",
@@ -21,10 +51,16 @@ const Profile = () => {
     });
 
     const [profilePic, setProfilePic] = useState(null);
+    const [attemptsCount, setAttemptsCount] = useState(0);
+    const [highestScore, setHighestScore] = useState(0);
+    const [problemsSolved, setProblemsSolved] = useState(0);
+    const [codingStreak, setCodingStreak] = useState(0);
+
     const currentUsername = localStorage.getItem("Username");
 
     // Function to Fetch User Profile
     const getUserDetails = async () => {
+        setLoading(true);
         try {
             const response = await fetch(`http://localhost:8788/api/updateUserProfileGetByUsername/${currentUsername}` , {
                 method : "GET",
@@ -54,8 +90,16 @@ const Profile = () => {
             if (data.profilePicUrl) {
                 setProfilePic(data.profilePicUrl);
             }
+            
+            // Mock data for coding stats (replace with actual API data when available)
+            setProblemsSolved(Math.floor(Math.random() * 30) + 5);
+            setCodingStreak(Math.floor(Math.random() * 10) + 1);
+            
+            setLoading(false);
         } catch (error) {
             console.error("Error fetching user details:", error);
+            toast.error("Failed to load profile data");
+            setLoading(false);
         }
     };
 
@@ -65,6 +109,20 @@ const Profile = () => {
         console.log(profile);
         
     }, []);
+
+    useEffect(() => {
+        fetch(`http://localhost:8788/api/quiz/getResults?username=${currentUsername}`)
+            .then(res => res.json())
+            .then(data => {
+                setAttemptsCount(data.length);
+                const max = data.length > 0 ? Math.max(...data.map(r => r.score)) : 0;
+                setHighestScore(max);
+            })
+            .catch(err => {
+                console.error("Error fetching quiz stats:", err);
+                toast.error("Failed to load quiz stats");
+            });
+    }, [currentUsername]);
 
     const handleChange = (e) => {
         setProfile({ ...profile, [e.target.name]: e.target.value });
@@ -80,10 +138,11 @@ const Profile = () => {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        alert("Profile Updated!");
+        updateUser();
     };
 
-    const  updateUser = async () => {
+    const updateUser = async () => {
+        setSaveLoading(true);
         try{
             const response = await fetch(`http://localhost:8788/api/updateUserProfile/${currentUsername}`, {
                 method: "PUT",
@@ -96,14 +155,14 @@ const Profile = () => {
 
             const updateItem = await response.json()
             postDetails();
-            console.log("Data updated");
-            
+            toast.success("Profile updated successfully");
         }catch(e){
-            console.log("Error" , e);
-            
+            console.error("Error" , e);
+            toast.error("Failed to update profile");
+        } finally {
+            setSaveLoading(false);
         }
     }
-
 
     const postDetails = async () => {
         if (!profilePic) {
@@ -136,112 +195,317 @@ const Profile = () => {
         }
     };
 
+    if (loading) {
+        return (
+            <>
+                <Navbar2 />
+                <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}>
+                    <CircularProgress />
+                </Box>
+            </>
+        );
+    }
+
     return (
-        <div>
+        <Box sx={{ bgcolor: '#f5f7fa', minHeight: '100vh' }}>
             <Navbar2 />
-            <div className="flex bg-gray-100">
-                {/* Left Section - Profile Overview */}
-                <div className="w-72 bg-purple-800 text-white p-6 flex flex-col items-center rounded-r-xl shadow-lg">
-                    {/* Profile Picture */}
-                    <div className="w-36 h-36 rounded-full border-4 border-white overflow-hidden mb-4">
-                        {profilePic ? (
-                            <img src={profilePic} alt="Profile" className="w-full h-full object-cover" />
-                        ) : (
-                            <img src="https://www.google.com/url?sa=i&url=https%3A%2F%2Fpngtree.com%2Fso%2Fdefault&psig=AOvVaw0ewh7u0UmT7GWQOSFa9zOH&ust=1743112198153000&source=images&cd=vfe&opi=89978449&ved=0CBQQjRxqFwoTCOjewI3dqIwDFQAAAAAdAAAAABAJ" alt="" className="w-full h-full object-cover" />
-                        )}
-                    </div>
+            <Container maxWidth="lg" sx={{ mt: 4, mb: 8 }}>
+                {/* Header */}
+                <Paper 
+                    elevation={3} 
+                    sx={{ 
+                        p: 4, 
+                        borderRadius: 2, 
+                        mb: 4, 
+                        background: 'linear-gradient(135deg, #6a11cb 0%, #2575fc 100%)',
+                        color: 'white',
+                        textAlign: 'center'
+                    }}
+                >
+                    <Typography variant="h4" fontWeight="bold" gutterBottom align="center">
+                        Developer Profile
+                    </Typography>
+                    <Typography variant="subtitle1" align="center">
+                        Manage your personal information and view your coding achievements
+                    </Typography>
+                </Paper>
 
-                    {/* User Details */}
-                    <h2 className="text-xl font-semibold">{profile.name}</h2>
-                    <p className="text-sm text-gray-200">{profile.email}</p>
-                    <p className="text-sm text-gray-300 mt-1">{profile.phoneNumber}</p>
-                    <p className="text-sm text-gray-300 mt-1">{profile.department}, {profile.college}</p>
+                <Grid container spacing={4} sx={{ mb: 4 }} justifyContent="center">
+                    {/* Left Column - Profile Info */}
+                    <Grid item xs={12} md={4} sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                        <Paper elevation={2} sx={{ p: 2, borderRadius: 2, height: '100%' }}>
+                            {/* Profile Picture */}
+                            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 3 }}>
+                                <label htmlFor="profilePic" style={{ cursor: 'pointer' }}>
+                                    <Avatar 
+                                        src={profilePic} 
+                                        sx={{ 
+                                            width: 120, 
+                                            height: 120, 
+                                            mb: 2,
+                                            border: '4px solid #6a11cb'
+                                        }}
+                                    >
+                                        {profile.name ? profile.name.charAt(0).toUpperCase() : '?'}
+                                    </Avatar>
+                                    <input type="file" id="profilePic" style={{ display: 'none' }} accept="image/*" onChange={handleImageChange} />
+                                </label>
+                                <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                                    Click to change profile picture
+                                </Typography>
+                                <Typography variant="h5" fontWeight="bold">
+                                    {profile.name || currentUsername}
+                                </Typography>
+                                <Typography variant="body2" color="text.secondary">
+                                    {profile.email}
+                                </Typography>
+                            </Box>
 
-                    {/* Social Links */}
-                    <div className="flex space-x-4 mt-4">
-                        <a href={profile.githubLink} target="_blank" className="bg-gray-700 px-3 py-2 rounded-lg hover:bg-gray-600">GitHub</a>
-                        <a href={profile.linkedinLink} target="_blank" className="bg-blue-500 px-3 py-2 rounded-lg hover:bg-blue-400">LinkedIn</a>
-                    </div>
-                    {/* Extra Profile Details Section */}
-                    <div className="flex">
-                        <div className="grid grid-cols-1 gap-6 mt-8">
-                            <div className="bg-white shadow-md p-4 rounded-lg text-center">
-                                <h3 className="text-xl font-bold text-purple-800">10</h3>
-                                <p className="text-gray-500 text-sm">Challenges Completed</p>
-                            </div>
-                            <div className="bg-white shadow-md p-4 rounded-lg text-center">
-                                <h3 className="text-xl font-bold text-purple-800">5</h3>
-                                <p className="text-gray-500 text-sm">Achievements</p>
-                            </div>
-                            <div className="bg-white shadow-md p-4 rounded-lg text-center">
-                                <h3 className="text-xl font-bold text-purple-800">15</h3>
-                                <p className="text-gray-500 text-sm">Friends</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                            <Divider sx={{ my: 2 }} />
 
-                {/* Right Section - Profile Form & Stats */}
-                <div className="flex-1 flex flex-col items-center p-8">
-                    <div className="bg-white shadow-lg rounded-xl p-10 w-full max-w-3xl">
-                        <h2 className="text-3xl font-bold text-gray-800 text-center mb-8">Profile Settings</h2>
+                            {/* Stats Cards */}
+                            <Typography variant="h6" gutterBottom align="center">
+                                Coding Stats
+                            </Typography>
+                            <Grid container spacing={2} sx={{ mb: 3 }}>
+                                <Grid item xs={12} sm={6}>
+                                    <Card sx={{ bgcolor: '#f0f4ff', height: '100%', boxShadow: 2 }}>
+                                        <CardContent sx={{ textAlign: 'center', py: 3 }}>
+                                            <CodeIcon sx={{ color: '#2575fc', fontSize: 40, mb: 1 }} />
+                                            <Typography variant="h5" fontWeight="bold">
+                                                {problemsSolved}
+                                            </Typography>
+                                            <Typography variant="body2" color="text.secondary">
+                                                Problems Solved
+                                            </Typography>
+                                        </CardContent>
+                                    </Card>
+                                </Grid>
+                                <Grid item xs={12} sm={6}>
+                                    <Card sx={{ bgcolor: '#fff4f0', height: '100%', boxShadow: 2 }}>
+                                        <CardContent sx={{ textAlign: 'center', py: 3 }}>
+                                            <EmojiEventsIcon sx={{ color: '#ff6b35', fontSize: 40, mb: 1 }} />
+                                            <Typography variant="h5" fontWeight="bold">
+                                                {highestScore}
+                                            </Typography>
+                                            <Typography variant="body2" color="text.secondary">
+                                                Highest Score
+                                            </Typography>
+                                        </CardContent>
+                                    </Card>
+                                </Grid>
+                                <Grid item xs={12} sm={6}>
+                                    <Card sx={{ bgcolor: '#f0fff4', height: '100%', boxShadow: 2 }}>
+                                        <CardContent sx={{ textAlign: 'center', py: 3 }}>
+                                            <SchoolIcon sx={{ color: '#4CAF50', fontSize: 40, mb: 1 }} />
+                                            <Typography variant="h5" fontWeight="bold">
+                                                {attemptsCount}
+                                            </Typography>
+                                            <Typography variant="body2" color="text.secondary">
+                                                Quiz Attempts
+                                            </Typography>
+                                        </CardContent>
+                                    </Card>
+                                </Grid>
+                                <Grid item xs={12} sm={6}>
+                                    <Card sx={{ bgcolor: '#f4f0ff', height: '100%', boxShadow: 2 }}>
+                                        <CardContent sx={{ textAlign: 'center', py: 3 }}>
+                                            <CodeIcon sx={{ color: '#9c27b0', fontSize: 40, mb: 1 }} />
+                                            <Typography variant="h5" fontWeight="bold">
+                                                {codingStreak}
+                                            </Typography>
+                                            <Typography variant="body2" color="text.secondary">
+                                                Day Streak
+                                            </Typography>
+                                        </CardContent>
+                                    </Card>
+                                </Grid>
+                            </Grid>
 
-                        {/* Profile Image Upload */}
-                        <div className="flex justify-center mb-6">
-                            <label htmlFor="profilePic" className="relative cursor-pointer">
-                                <div className="w-36 h-36 rounded-full border-4 border-purple-600 flex items-center justify-center overflow-hidden bg-gray-200">
-                                    {profilePic ? (
-                                        <img src={profilePic} alt="Profile" className="w-full h-full object-cover" />
-                                    ) : (
-                                        <span className="text-gray-500">Upload</span>
-                                    )}
-                                </div>
-                                <input type="file" id="profilePic" className="hidden" accept="image/*" onChange={handleImageChange} />
-                            </label>
-                        </div>
+                            {/* Social Links */}
+                            {(profile.githubLink || profile.linkedinLink) && (
+                                <>
+                                    <Typography variant="h6" gutterBottom align="center">
+                                        Connect
+                                    </Typography>
+                                    <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, mb: 2 }}>
+                                        {profile.githubLink && (
+                                            <Link href={profile.githubLink} target="_blank" rel="noopener">
+                                                <Button 
+                                                    variant="outlined" 
+                                                    startIcon={<GitHubIcon />}
+                                                    sx={{ borderRadius: 2 }}
+                                                >
+                                                    GitHub
+                                                </Button>
+                                            </Link>
+                                        )}
+                                        {profile.linkedinLink && (
+                                            <Link href={profile.linkedinLink} target="_blank" rel="noopener">
+                                                <Button 
+                                                    variant="outlined" 
+                                                    startIcon={<LinkedInIcon />}
+                                                    sx={{ borderRadius: 2 }}
+                                                >
+                                                    LinkedIn
+                                                </Button>
+                                            </Link>
+                                        )}
+                                    </Box>
+                                </>
+                            )}
+                        </Paper>
+                    </Grid>
 
-                        {/* Profile Form */}
-                        <form onSubmit={handleSubmit} className="space-y-6">
-                            <div className="grid grid-cols-2 gap-6">
-                                <input type="text" name="name" value={profile.name} placeholder="Full Name" onChange={handleChange} className="w-full px-4 py-3 border rounded-lg focus:ring focus:ring-purple-300 outline-none" />
-                                <input type="email" name="email" value={profile.email} placeholder="Email" className="w-full px-4 py-3 border rounded-lg focus:ring focus:ring-purple-300 outline-none" disabled />
-                            </div>
+                    {/* Right Column - Edit Form */}
+                    <Grid item xs={12} md={8}>
+                        <Paper elevation={2} sx={{ p: 3, borderRadius: 2 }}>
+                            <Typography variant="h5" fontWeight="bold" gutterBottom align="center">
+                                Edit Profile
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }} align="center">
+                                Update your personal information
+                            </Typography>
 
-                            <div className="grid grid-cols-2 gap-6">
-                                <input type="text" name="username" value={currentUsername} placeholder="Username" className="w-full px-4 py-3 border rounded-lg focus:ring focus:ring-purple-300 outline-none" disabled />
-                                <input type="text" name="department" value={profile.department} placeholder="Department" onChange={handleChange} className="w-full px-4 py-3 border rounded-lg focus:ring focus:ring-purple-300 outline-none" />
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-6">
-                                <input type="text" name="college" value={profile.college} placeholder="College" onChange={handleChange} className="w-full px-4 py-3 border rounded-lg focus:ring focus:ring-purple-300 outline-none" />
-                                <input type="date" name="dob" value={profile.dob} placeholder="Date of Birth" onChange={handleChange} className="w-full px-4 py-3 border rounded-lg focus:ring focus:ring-purple-300 outline-none" />
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-6">
-                                <select name="gender" value={profile.gender} onChange={handleChange} className="w-full px-4 py-3 border rounded-lg focus:ring focus:ring-purple-300 outline-none">
-                                    <option value="">Select Gender</option>
-                                    <option value="Male">Male</option>
-                                    <option value="Female">Female</option>
-                                    <option value="Other">Other</option>
-                                </select>
-                                <input type="text" name="phoneNumber" value={profile.phoneNumber} placeholder="Phone Number" onChange={handleChange} className="w-full px-4 py-3 border rounded-lg focus:ring focus:ring-purple-300 outline-none" />
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-6">
-                                <input type="text" name="githubLink" value={profile.githubLink} placeholder="GitHub Profile" onChange={handleChange} className="w-full px-4 py-3 border rounded-lg focus:ring focus:ring-purple-300 outline-none" />
-                                <input type="text" name="linkedinLink" value={profile.linkedinLink} placeholder="LinkedIn Profile" onChange={handleChange} className="w-full px-4 py-3 border rounded-lg focus:ring focus:ring-purple-300 outline-none" />
-                            </div>
-
-                            <button onClick={() => {updateUser()}} type="submit" className="w-full bg-purple-600 text-white py-3 rounded-lg hover:bg-purple-700 transition duration-200">
-                                Update Profile
-                            </button>
-                        </form>
-                    </div>
-
-
-                </div>
-            </div>
-        </div>
+                            <form onSubmit={handleSubmit} style={{ textAlign: 'center' }}>
+                                <Grid container spacing={3} justifyContent="center" sx={{ maxWidth: '90%', mx: 'auto' }}>
+                                    <Grid item xs={12} sm={6}>
+                                        <TextField
+                                            fullWidth
+                                            label="Full Name"
+                                            name="name"
+                                            value={profile.name}
+                                            onChange={handleChange}
+                                            variant="outlined"
+                                        />
+                                    </Grid>
+                                    <Grid item xs={12} sm={6}>
+                                        <TextField
+                                            fullWidth
+                                            label="Email"
+                                            type="email"
+                                            name="email"
+                                            value={profile.email}
+                                            disabled
+                                            variant="outlined"
+                                        />
+                                    </Grid>
+                                    <Grid item xs={12} sm={6}>
+                                        <TextField
+                                            fullWidth
+                                            label="Username"
+                                            name="username"
+                                            value={currentUsername}
+                                            disabled
+                                            variant="outlined"
+                                        />
+                                    </Grid>
+                                    <Grid item xs={12} sm={6}>
+                                        <TextField
+                                            fullWidth
+                                            label="Department"
+                                            name="department"
+                                            value={profile.department}
+                                            onChange={handleChange}
+                                            variant="outlined"
+                                        />
+                                    </Grid>
+                                    <Grid item xs={12} sm={6}>
+                                        <TextField
+                                            fullWidth
+                                            label="College/University"
+                                            name="college"
+                                            value={profile.college}
+                                            onChange={handleChange}
+                                            variant="outlined"
+                                        />
+                                    </Grid>
+                                    <Grid item xs={12} sm={6}>
+                                        <TextField
+                                            fullWidth
+                                            label="Date of Birth"
+                                            type="date"
+                                            name="dob"
+                                            value={profile.dob}
+                                            onChange={handleChange}
+                                            variant="outlined"
+                                            InputLabelProps={{ shrink: true }}
+                                        />
+                                    </Grid>
+                                    <Grid item xs={12} sm={6}>
+                                        <FormControl fullWidth variant="outlined">
+                                            <InputLabel>Gender</InputLabel>
+                                            <Select
+                                                name="gender"
+                                                value={profile.gender}
+                                                onChange={handleChange}
+                                                label="Gender"
+                                            >
+                                                <MenuItem value="">Select Gender</MenuItem>
+                                                <MenuItem value="Male">Male</MenuItem>
+                                                <MenuItem value="Female">Female</MenuItem>
+                                                <MenuItem value="Other">Other</MenuItem>
+                                            </Select>
+                                        </FormControl>
+                                    </Grid>
+                                    <Grid item xs={12} sm={6}>
+                                        <TextField
+                                            fullWidth
+                                            label="Phone Number"
+                                            name="phoneNumber"
+                                            value={profile.phoneNumber}
+                                            onChange={handleChange}
+                                            variant="outlined"
+                                        />
+                                    </Grid>
+                                    <Grid item xs={12} sm={6}>
+                                        <TextField
+                                            fullWidth
+                                            label="GitHub Profile URL"
+                                            name="githubLink"
+                                            value={profile.githubLink}
+                                            onChange={handleChange}
+                                            variant="outlined"
+                                            placeholder="https://github.com/username"
+                                        />
+                                    </Grid>
+                                    <Grid item xs={12} sm={6}>
+                                        <TextField
+                                            fullWidth
+                                            label="LinkedIn Profile URL"
+                                            name="linkedinLink"
+                                            value={profile.linkedinLink}
+                                            onChange={handleChange}
+                                            variant="outlined"
+                                            placeholder="https://linkedin.com/in/username"
+                                        />
+                                    </Grid>
+                                    <Grid item xs={12}>
+                                        <Button 
+                                            type="submit" 
+                                            variant="contained" 
+                                            fullWidth 
+                                            disabled={saveLoading}
+                                            sx={{ 
+                                                mt: 2, 
+                                                py: 1.5, 
+                                                background: 'linear-gradient(90deg, #6a11cb 0%, #2575fc 100%)',
+                                                '&:hover': {
+                                                    background: 'linear-gradient(90deg, #5910b0 0%, #1e68e0 100%)',
+                                                }
+                                            }}
+                                        >
+                                            {saveLoading ? <CircularProgress size={24} color="inherit" /> : 'Update Profile'}
+                                        </Button>
+                                    </Grid>
+                                </Grid>
+                            </form>
+                        </Paper>
+                    </Grid>
+                </Grid>
+            </Container>
+            <ToastContainer position="top-right" autoClose={3000} />
+        </Box>
     );
 };
 

@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from "react-router-dom";
+import { toast } from 'react-toastify';
 import './navbar.css';
+import { useNavbarVisibility } from './NavbarVisibilityContext';
 
 function Navbar() {
+  const { navbarVisible } = useNavbarVisibility();
   const [isAuthenticated, setIsAuthenticated] = useState(true);
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -18,12 +21,17 @@ function Navbar() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  if (!navbarVisible) return null;
+
+
   const handleLogout = () => {
     // Clear user authentication (e.g., remove token)
     setIsAuthenticated(false);
-    localStorage.clear();
-    sessionStorage.clear();
+    localStorage.removeItem('Username');
+    sessionStorage.removeItem('Authtoken');
+    toast.info('Logged out successfully', { onClose: () => navigate('/login') });
     navigate('/login'); // Redirect to login page
+    // navigation handled after toast closes
   };
 
   return (
@@ -31,7 +39,7 @@ function Navbar() {
       <nav className={`fixed w-full z-50 transition-all duration-300 ${scrolled ? 'nav-scrolled' : ''} ${isOpen ? 'nav-open' : ''}`}>
         <div className="container mx-auto px-4">
           <div className="flex justify-between items-center py-4">
-            <h1 className="text-2xl font-bold text-purple-400 flex items-center">
+            <h1 onClick={() => navigate('/')} className="text-2xl font-bold text-purple-400 flex items-center cursor-pointer">
               <span className="mr-2">⚡</span> CodeClash
             </h1>
 
@@ -49,28 +57,17 @@ function Navbar() {
 
             {/* Navigation Links */}
             <div className={`lg:flex items-center space-x-1 ${isOpen ? 'mobile-menu-open' : 'mobile-menu-closed'}`}>
-              <Link to="/" className="nav-link">Challenge</Link>
-              <Link to="/" className="nav-link">Leaderboard</Link>
-              <Link to="/joinroom" className="nav-button bg-purple-500 hover:bg-purple-600">
-                Join Room
-              </Link>
-              <Link to="/profile" className="nav-button bg-purple-500 hover:bg-purple-600">
-                Profile
-              </Link>
-              <Link to="/createroom" className="nav-button bg-purple-600 hover:bg-purple-700">
-                Create Room
-              </Link>
+              <Link to="/quiz" className="px-3 py-2 text-gray-300 hover:text-white hover:underline transition-colors duration-200">Mock Test</Link>
+              <Link to="/performance" className="px-3 py-2 text-gray-300 hover:text-white hover:underline transition-colors duration-200">Performance</Link>
+            {/*  <Link to="/joinroom" className="px-3 py-2 text-gray-300 hover:text-white hover:underline transition-colors duration-200">Join Room</Link> */}
+              <Link to="/profile" className="px-3 py-2 text-gray-300 hover:text-white hover:underline transition-colors duration-200">Profile</Link>
+              {/* <Link to="/practice" className="px-3 py-2 text-gray-300 hover:text-white hover:underline transition-colors duration-200">Practice</Link> */}
+              <Link to="/problemset" className="px-3 py-2 text-gray-300 hover:text-white hover:underline transition-colors duration-200">Problem Set</Link>
 
               {isAuthenticated ? (
-                <button 
-                  onClick={handleLogout} 
-                  className="nav-button bg-red-500 hover:bg-red-600">
-                  Logout
-                </button>
+                <button onClick={handleLogout} className="px-3 py-2 text-gray-300 hover:text-white hover:underline transition-colors duration-200">Logout</button>
               ) : (
-                <Link to="/register" className="nav-button bg-purple-500 hover:bg-purple-600">
-                  Register
-                </Link>
+                <Link to="/register" className="px-3 py-2 text-gray-300 hover:text-white hover:underline transition-colors duration-200">Register</Link>
               )}
             </div>
           </div>

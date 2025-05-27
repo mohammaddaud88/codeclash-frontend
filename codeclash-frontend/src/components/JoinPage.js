@@ -19,7 +19,12 @@ const JoinPage = () => {
       console.error("Room code is required.");
       return;
     }
-
+    // Prevent host from joining their own room
+    const host = sessionStorage.getItem('RoomHost');
+    if (host && host === username) {
+      alert("You cannot join your own room.");
+      return;
+    }
     try {
       const response = await fetch(
         `http://localhost:8788/api/room/join?roomCode=${roomCode}&playerUsername=${username}`,
@@ -40,7 +45,7 @@ const JoinPage = () => {
       const data = await response.text();
       console.log("Join response:", data);
 
-      // ✅ Navigate to shared waiting room after join
+      // Navigate to shared waiting room after join
       navigate(`/waiting-room?roomCode=${roomCode}&username=${encodeURIComponent(username)}`);
 
     } catch (error) {
@@ -54,13 +59,7 @@ const JoinPage = () => {
       <div className="flex items-center justify-center min-h-screen bg-gray-100">
         <div className="bg-white p-6 rounded-lg shadow-lg w-96">
           <h1 className="text-2xl font-bold text-center mb-4">Join the Room</h1>
-          <input
-            type="text"
-            placeholder="Enter your name"
-            className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
+          {/* Name input removed, use username from localStorage */}
           <input
             type="text"
             placeholder="Enter room code"

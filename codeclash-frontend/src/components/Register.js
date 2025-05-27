@@ -2,6 +2,8 @@ import { useState } from 'react';
 // import { registerUser } from '../api/auth';
 import { Link, useNavigate } from 'react-router-dom';
 import Navbar from './Navbar';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const Register = () => {
     const [userData, setUserData] = useState({ name: '', username: '', email: '', password: '' });
@@ -16,31 +18,33 @@ const Register = () => {
     }
 
    const register = () => {
-    if(!userData.username ||!userData.name || !userData.email || !userData.password){
-        alert("Please enter correct details");
+    if (!userData.username || !userData.name || !userData.email || !userData.password) {
+        toast.error("Please enter correct details");
         return;
     }
     fetch('http://localhost:8788/api/auth/register', {
-        method: "POST",
-        headers: {
-        "Content-Type": "application/json"
-    },
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
             name: userData.name,
             username: userData.username,
             email: userData.email,
             password: userData.password
         })
-    }).then(res => res.json()).then(data => {
-        if(data?.error){
-            console.log('Data Error');
-        } else{
-            alert("Registration Successfull please login")
-            console.log("Successfully Registered!");
-            navigate("/login");
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data?.error) {
+            toast.error(data.error || 'Registration failed');
+        } else {
+            toast.success('Registration successful! Please login', { onClose: () => navigate('/login') });
+            // navigation handled on toast close
         }
     })
-
+    .catch(err => {
+        console.error(err);
+        toast.error('Network error');
+    });
    }
 
 
@@ -91,6 +95,7 @@ const Register = () => {
                     Already have an account? 
                     <Link to="/login" className="text-green-600 hover:underline ml-1">Login</Link>
                 </p>
+                <ToastContainer position="top-right" autoClose={3000} />
             </div>
         </div>
         </div>

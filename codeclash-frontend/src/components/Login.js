@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { loginUser } from '../api/auth';
 import { useNavigate } from 'react-router-dom';
 import Navbar from './Navbar';
-
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const Login = () => {
     const [username, setUsername] = useState('');
@@ -12,8 +12,8 @@ const Login = () => {
 
     const login = () => {
 
-        if(!username || !password){
-            alert("Please Enter All The Details");
+        if (!username || !password) {
+            toast.error("Please enter all the details");
             return;
         }
 
@@ -29,19 +29,20 @@ const Login = () => {
         })
         .then(res => res.json())
         .then(data => {
-            if(data?.error){
-                console.log("Error");
+            if (data?.error) {
+                toast.error(data.error || "Login failed");
             } else {
-                console.log(data)
+                toast.success("Login successful", { onClose: () => navigate('/') });
                 setToken(data.accessToken);
                 setUsername(data.username);
                 localStorage.setItem('Username', data.username);
                 sessionStorage.setItem('Authtoken', data.accessToken);
-                navigate('/');
+                // navigation handled after toast closes
             }
         })
         .catch(err => {
-            console.log("Fetch error: ", err);
+            console.error("Fetch error: ", err);
+            toast.error("Network error");
         });
 
     }
@@ -82,6 +83,7 @@ const Login = () => {
                     <a href="/register" className="text-blue-600 hover:underline ml-1">Register</a>
                 </p>
             </div>
+            <ToastContainer position="top-right" autoClose={3000} />
         </div>
         </div>
     );
